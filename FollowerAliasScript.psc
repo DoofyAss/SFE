@@ -40,6 +40,40 @@ endEvent
 
 
 
+event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
+
+	;	"Fix - equipped weapon with magic in one hand"
+	;	"Fuck you FollowerHuntingBow and FollowerIronArrow"
+	
+	Actor Follower = Self.GetActorRef()
+	
+	;	"Both fist"
+	
+	if Follower.GetEquippedItemType(0) == 0 && Follower.GetEquippedItemType(1) == 0
+		Follower.UnequipSpell(Follower.GetEquippedSpell(0), 0)
+		Follower.UnequipSpell(Follower.GetEquippedSpell(1), 1)
+	endif
+	
+	if akBaseObject as Weapon
+	
+		int weaponType = (akBaseObject as Weapon).GetWeaponType()
+		
+		; "Left Hand"
+		
+		if Follower.GetEquippedItemType(0) == weaponType
+			Follower.UnequipSpell(Follower.GetEquippedSpell(0), 0)
+		endif
+		
+		; "Right Hand"
+		
+		if Follower.GetEquippedItemType(1) == weaponType
+			Follower.UnequipSpell(Follower.GetEquippedSpell(1), 1)
+		endif
+	endif
+endEvent
+
+
+
 event OnDeath(Actor akKiller)
 
 	;	"Clearing the follower because the player killed him."

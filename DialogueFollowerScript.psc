@@ -1,11 +1,14 @@
 ;/
 	Mr. Black	"mr.black.developer@gmail.com"
-	2019.07.16
+	begin v1.0	2019.07.16
+	begin v1.1	2019.07.20
 /;
 
 ScriptName DialogueFollowerScript extends Quest conditional
 
 Message property AnimalDismissMessage auto
+Message property AnimalDeathMessage auto
+
 Message property FollowerDismissMessage auto
 Message property FollowerDismissMessageCompanions auto
 Message property FollowerDismissMessageCompanionsFemale auto
@@ -13,13 +16,31 @@ Message property FollowerDismissMessageCompanionsMale auto
 Message property FollowerDismissMessageWait auto
 Message property FollowerDismissMessageWedding auto
 
+Message property Follower01DismissMessage auto
+Message property Follower02DismissMessage auto
+Message property Follower03DismissMessage auto
+Message property Follower04DismissMessage auto
+Message property Follower05DismissMessage auto
+Message property Follower06DismissMessage auto
+Message property Follower07DismissMessage auto
+Message property Follower08DismissMessage auto
+
+Message property Follower01DeathMessage auto
+Message property Follower02DeathMessage auto
+Message property Follower03DeathMessage auto
+Message property Follower04DeathMessage auto
+Message property Follower05DeathMessage auto
+Message property Follower06DeathMessage auto
+Message property Follower07DeathMessage auto
+Message property Follower08DeathMessage auto
+
 SetHirelingRehire property HirelingRehireScript auto
 
-Faction property pCurrentHireling auto
-Faction property pDismissedFollower auto
+Faction property CurrentHireling auto
+Faction property DismissedFollowerFaction auto
 
-ReferenceAlias property pAnimalAlias auto
-GlobalVariable property pPlayerAnimalCount auto
+ReferenceAlias property AnimalAlias auto
+GlobalVariable property PlayerAnimalCount auto
 
 ReferenceAlias[] property FollowerAlias auto
 GlobalVariable property PlayerFollowerCount auto
@@ -31,13 +52,18 @@ EffectShader property EffectSetFollower auto
 EffectShader property EffectDismiss auto
 
 Idle property AnimWait auto
-Idle property AnimFollows auto
+Idle property AnimFollows auto ; "I dont understand why propery name AnimFollowers doesn't work"
 Idle property AnimDismiss auto
 Idle property AnimIdleStop auto
 Idle property AnimIdleMagic auto
 Idle property AnimCleanSword auto
 Idle property AnimShieldCheer auto
 
+Spell property PlayerHealingTrigger auto
+Actor property petMudcrab auto
+Actor property petSpider auto
+Actor property petWolf auto
+Actor property petHare auto
 
 
 
@@ -51,17 +77,14 @@ Idle property AnimShieldCheer auto
 ;	Misc		----------------------------------------------------------------------------------------------------
 
 int function GetFollowerSlot(Actor Follower)
-	int slot = 0
 	int i = 0
 	
 	while i < FollowerAlias.length
 		if FollowerAlias[i].GetActorRef() == Follower
-			slot = i
+			return i
 		endif
 		i += 1
 	endwhile
-	
-	return slot
 endFunction
 
 
@@ -96,22 +119,71 @@ endFunction
 
 
 
-function Debug()
+function showDismissMessage(int i)
 
-	; Debug.Notification("Follower01: " + FollowerAlias[0].GetActorReference().GetBaseObject().GetName())
-	
-	string names
-	int i = 0
-	
-	while i < FollowerAlias.length
-		if FollowerAlias[i].GetActorRef() != none
-			names = names + (i + 1) + ". " + FollowerAlias[i].GetActorReference().GetBaseObject().GetName() + "\n"
-		endif
-		i += 1
-	endwhile
-	
-	Debug.MessageBox(names)
-	
+	if i == 0
+		Follower01DismissMessage.Show()
+	elseif i == 1
+		Follower02DismissMessage.Show()
+	elseif i == 2
+		Follower03DismissMessage.Show()
+	elseif i == 3
+		Follower04DismissMessage.Show()
+	elseif i == 4
+		Follower05DismissMessage.Show()
+	elseif i == 5
+		Follower06DismissMessage.Show()
+	elseif i == 6
+		Follower07DismissMessage.Show()
+	elseif i == 7
+		Follower08DismissMessage.Show()
+	else
+		FollowerDismissMessage.Show()
+	endif
+endFunction
+
+
+
+function showDeathMessage(int i)
+
+	if i == 0
+		Follower01DeathMessage.Show()
+	elseif i == 1
+		Follower02DeathMessage.Show()
+	elseif i == 2
+		Follower03DeathMessage.Show()
+	elseif i == 3
+		Follower04DeathMessage.Show()
+	elseif i == 4
+		Follower05DeathMessage.Show()
+	elseif i == 5
+		Follower06DeathMessage.Show()
+	elseif i == 6
+		Follower07DeathMessage.Show()
+	elseif i == 7
+		Follower08DeathMessage.Show()
+	else
+	endif
+endFunction
+
+
+
+
+
+
+
+
+
+
+;	Dialogue		----------------------------------------------------------------------------------------------------
+
+function switchHealingTrigger(Actor Follower)
+
+	if Follower.HasSpell(PlayerHealingTrigger)
+		Follower.RemoveSpell(PlayerHealingTrigger)
+	else
+		Follower.AddSpell(PlayerHealingTrigger)
+	endif
 endFunction
 
 
@@ -162,7 +234,7 @@ function SpeakerAnimFollow(Actor Follower)
 		endif
 	endif
 	
-	Utility.Wait(3)
+	Utility.Wait(2)
 	
 endFunction
 
@@ -170,23 +242,23 @@ endFunction
 
 function SpeakerDismiss(Actor Follower)
 
+	Follower.PlayIdle(AnimIdleStop)
+	Follower.PlayIdle(AnimDismiss)
+
 	DismissCurrentFollower(GetFollowerSlot(Follower), 0)
+	Utility.Wait(1)
 endFunction
 
 
 
-function SpeakerDismissGroup()
+function SpeakerDismissGroup(Actor Follower)
 
-	int i = 0
+	Follower.PlayIdle(AnimIdleStop)
+	Follower.PlayIdle(AnimDismiss)
 	
-	while i < FollowerAlias.length
-		if FollowerAlias[i].GetActorRef() != none
-			DismissCurrentFollower(i, 0)
-		endif
-		i += 1
-	endwhile
-	
-	Utility.Wait(2)
+	DismissGroup()
+	DismissAnimal()
+	Utility.Wait(1)
 endFunction
 
 
@@ -209,6 +281,8 @@ function SpeakerWaitGroup()
 		endif
 		i += 1
 	endwhile
+	
+	AnimalWait()
 endFunction
 
 
@@ -230,6 +304,8 @@ function SpeakerFollowGroup()
 		endif
 		i += 1
 	endwhile
+	
+	AnimalFollow()
 endFunction
 
 
@@ -250,16 +326,13 @@ function SetFollower(ObjectReference FollowerRef)
 	ResetFollowerCount()
 	
 	Actor Follower = FollowerRef as Actor
-	Follower.RemoveFromFaction(pDismissedFollower)
+	Follower.RemoveFromFaction(DismissedFollowerFaction)
 	if Follower.GetRelationshipRank(Game.GetPlayer()) < 3 && Follower.GetRelationshipRank(Game.GetPlayer()) >= 0
 		Follower.SetRelationshipRank(Game.GetPlayer(), 3)
 	endIf
 	Follower.SetPlayerTeammate(true, true)
-	int FollowerCount = PlayerFollowerCount.GetValue() as int
-	PlayerFollowerCount.SetValue(FollowerCount + 1)
-	
+	PlayerFollowerCount.SetValue(PlayerFollowerCount.GetValue() + 1)
 	FollowerAlias[GetFreeSlot()].ForceRefTo(Follower)
-	
 	EffectSetFollower.Play(Follower, 3.0)
 endFunction
 
@@ -269,32 +342,45 @@ function DismissCurrentFollower(int i, int reason)
 
 	Actor Follower = FollowerAlias[i].GetActorRef()
 	
-	Follower.PlayIdle(AnimIdleStop)
-	Follower.PlayIdle(AnimDismiss)
-	
 	if reason == 1
 		FollowerDismissMessageWait.Show()
+		;	Debug.Notification(Follower.GetActorBase().GetName())
 	elseif reason == 2
-		;	"follower is dead"
+		showDeathMessage(i)
 	else
-		FollowerDismissMessage.Show()
+		showDismissMessage(i)
 	endIf
 	
-	Debug.Notification(Follower.GetActorBase().GetName())
-	
 	Follower.StopCombatAlarm()
-	Follower.AddToFaction(pDismissedFollower)
+	Follower.AddToFaction(DismissedFollowerFaction)
 	Follower.SetPlayerTeammate(false, true)
-	Follower.RemoveFromFaction(pCurrentHireling)
+	Follower.RemoveFromFaction(CurrentHireling)
 	Follower.SetAV("WaitingForPlayer", 0)
 	HirelingRehireScript.DismissHireling(Follower.GetActorBase())
 	
 	FollowerAlias[i].Clear()
-	int FollowerCount = PlayerFollowerCount.GetValue() as int
-	PlayerFollowerCount.SetValue(FollowerCount - 1)
+	ResetFollowerCount()
 	
 	EffectDismiss.Play(Follower, 3.0)
 	Follower.EvaluatePackage()
+	
+	;	SetObjectiveDisplayed(i * 10, false, false)
+endFunction
+
+
+
+function DismissGroup()
+
+	int i = 0
+	
+	while i < FollowerAlias.length
+		if FollowerAlias[i].GetActorRef() != none
+			DismissCurrentFollower(i, 0)
+		endif
+		i += 1
+	endwhile
+	
+	Utility.Wait(2)
 endFunction
 
 
@@ -312,6 +398,8 @@ function CurrentFollowerWait(int i)
 	EffectWait.Play(Follower, 3.0)
 	Follower.SetAV("WaitingForPlayer", 1)
 	FollowerAlias[i].RegisterForUpdateGameTime(72)
+	
+	;	SetObjectiveDisplayed(i * 10, true, true)
 endFunction
 
 
@@ -328,7 +416,8 @@ function CurrentFollowerFollow(int i)
 	Actor Follower = FollowerAlias[i].GetActorRef()
 	EffectFollow.Play(Follower, 3.0)
 	Follower.SetAV("WaitingForPlayer", 0)
-	Self.SetObjectiveDisplayed(10, false, false)
+	
+	;	SetObjectiveDisplayed(i * 10, false, false)
 endFunction
 
 
@@ -345,23 +434,19 @@ endFunction
 
 function DismissFollower(int iMessage, int iSayLine)
 
-	if iMessage == 0
-		FollowerDismissMessage.Show()
-	elseIf iMessage == 1
+	if iMessage == 1
 		FollowerDismissMessageWedding.Show()
-	elseIf iMessage == 2
+	elseif iMessage == 2
 		FollowerDismissMessageCompanions.Show()
-	elseIf iMessage == 3
+	elseif iMessage == 3
 		FollowerDismissMessageCompanionsMale.Show()
-	elseIf iMessage == 4
+	elseif iMessage == 4
 		FollowerDismissMessageCompanionsFemale.Show()
-	elseIf iMessage == 5
+	elseif iMessage == 5
 		FollowerDismissMessageWait.Show()
-	else
-		FollowerDismissMessage.Show()
 	endIf
 	
-	SpeakerDismissGroup()
+	DismissGroup()
 
 endFunction
 
@@ -380,41 +465,85 @@ endFunction
 
 function SetAnimal(ObjectReference AnimalRef)
 
-	Actor AnimalActor = AnimalRef as Actor
-	AnimalActor.SetAV("Lockpicking", 0)
-	AnimalActor.SetRelationshipRank(Game.GetPlayer(), 3)
-	AnimalActor.SetPlayerTeammate(true, false)
-	pAnimalAlias.ForceRefTo(AnimalActor)
-	pPlayerAnimalCount.SetValue(1)
+	Actor Animal = AnimalRef as Actor
+	
+	Animal.SetAV("Lockpicking", 0)
+	Animal.SetRelationshipRank(Game.GetPlayer(), 3)
+	Animal.SetPlayerTeammate(true, false)
+	AnimalAlias.ForceRefTo(Animal)
+	PlayerAnimalCount.SetValue(1)
 endFunction
 
 
 
 function AnimalWait()
 
-	Actor AnimalActor = pAnimalAlias.GetActorRef()
-	AnimalActor.SetAV("WaitingForPlayer", 1)
-	pAnimalAlias.RegisterForUpdateGameTime(72)
+	Actor Animal = AnimalAlias.GetActorRef()
+	Animal.SetAV("WaitingForPlayer", 1)
+	EffectWait.Play(Animal, 3.0)
+	AnimalAlias.RegisterForUpdateGameTime(72)
 endFunction
 
 
 
 function AnimalFollow()
 
-	Actor AnimalActor = pAnimalAlias.GetActorRef()
-	AnimalActor.SetAV("WaitingForPlayer", 0)
-	self.SetObjectiveDisplayed(20, false, false)
+	Actor Animal = AnimalAlias.GetActorRef()
+	Animal.SetAV("WaitingForPlayer", 0)
+	EffectFollow.Play(Animal, 3.0)
+	
+	;	SetObjectiveDisplayed(20, false, false)
+endFunction
+
+
+
+function SummonAnimal(int Character)
+
+	Actor Player = Game.GetPlayer()
+	Actor CharacterRef
+	
+	;	"behind player"
+	float x = 250.0 * -Math.Sin(Player.GetAngleZ())
+	float y = 250.0 * -Math.Cos(Player.GetAngleZ())
+	
+	if Character == 0
+		CharacterRef = petMudcrab
+	elseif Character == 1
+		CharacterRef = petSpider
+	elseif Character == 2
+		CharacterRef = petWolf
+	elseif Character == 3
+		CharacterRef = petHare
+	endif
+	
+	CharacterRef.MoveTo(Player, x, y)
+	CharacterRef.EnableNoWait()
+	;	CharacterRef.AllowPCDialogue(true)	;	"Okay, how about doors?"
+	setAnimal(CharacterRef)
 endFunction
 
 
 
 function DismissAnimal()
 
-	if pAnimalAlias as bool && pAnimalAlias.GetActorRef().IsDead() == false
-		Actor DismissedAnimalActor = pAnimalAlias.GetActorRef()
-		DismissedAnimalActor.SetActorValue("Variable04", 0)
-		pPlayerAnimalCount.SetValue(0)
-		pAnimalAlias.Clear()
+	Actor Animal = AnimalAlias.GetActorRef()
+	
+	if Animal == none
+		return
+	endif
+	
+	if Animal.IsDead()
+		AnimalDeathMessage.Show()
+	else
 		AnimalDismissMessage.Show()
-	endIf
+	endif
+	
+	Animal.SetActorValue("Variable04", 0)
+	Animal.SetAV("WaitingForPlayer", 0)
+	AnimalAlias.Clear()
+	PlayerAnimalCount.SetValue(0)
+	
+	if Animal == petMudcrab || Animal == petSpider || Animal == petWolf || Animal == petHare
+		Animal.DisableNoWait()	;	Animal.Delete()
+	endif
 endFunction
